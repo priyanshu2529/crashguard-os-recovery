@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CrashGuard Console</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>CRASHGUARD</h1>
+        <p>Intelligent System Failure Recovery & Checkpointing Framework</p>
+      </div>
+      <div class="system-state"><span id="health-dot" class="dot"></span><span id="health">BOOTING</span></div>
+    </header>
+
+    <main class="shell">
+      <section class="metrics-strip">
+        <div><span>CPU</span><strong id="cpu">--%</strong></div>
+        <div><span>MEMORY</span><strong id="memory">--%</strong></div>
+        <div><span>DISK</span><strong id="disk">--%</strong></div>
+        <div><span>CHECKPOINTS</span><strong id="checkpoint-count">0</strong></div>
+        <div><span>RECOVERIES</span><strong id="recovery-count">0</strong></div>
+      </section>
+
+      <section class="grid">
+        <article class="panel">
+          <div class="panel-title">System Health</div>
+          <div class="bar-row"><span>CPU</span><div class="bar"><i id="cpu-bar"></i></div><b id="cpu-small">--%</b></div>
+          <div class="bar-row"><span>RAM</span><div class="bar"><i id="ram-bar"></i></div><b id="ram-small">--%</b></div>
+          <div class="bar-row"><span>DISK</span><div class="bar"><i id="disk-bar"></i></div><b id="disk-small">--%</b></div>
+          <div class="subtle">Live host resource sampling via psutil.</div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-title">Active Process</div>
+          <dl class="kv">
+            <dt>Name</dt><dd id="process-name">crashguard-demo</dd>
+            <dt>PID</dt><dd id="pid">--</dd>
+            <dt>Status</dt><dd id="process-status">STOPPED</dd>
+            <dt>Uptime</dt><dd id="uptime">0s</dd>
+            <dt>Task</dt><dd id="task">--</dd>
+            <dt>Progress</dt><dd id="progress">--</dd>
+            <dt>Counter</dt><dd id="counter">--</dd>
+          </dl>
+          <div class="button-row">
+            <button data-action="startProcess">Start</button>
+            <button data-action="stopProcess">Stop</button>
+          </div>
+        </article>
+
+        <article class="panel wide">
+          <div class="panel-title">Checkpoint Manager</div>
+          <div class="button-row compact">
+            <button data-action="createCheckpoint">Create Checkpoint</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ID</th><th>Time</th><th>Type</th><th>Size</th><th>Savings</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody id="checkpoint-table"></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-title">Recovery Console</div>
+          <label class="select-label">Policy
+            <select id="policy">
+              <option value="latest">Latest Checkpoint</option>
+              <option value="safest">Safest Checkpoint</option>
+              <option value="automatic">Automatic Recovery</option>
+              <option value="manual">Manual Recovery</option>
+            </select>
+          </label>
+          <dl class="kv">
+            <dt>Last Failure</dt><dd id="last-failure">--</dd>
+            <dt>Checkpoint</dt><dd id="checkpoint-used">--</dd>
+            <dt>RTO</dt><dd id="rto">--</dd>
+            <dt>Status</dt><dd id="recovery-status">IDLE</dd>
+          </dl>
+        </article>
+
+        <article class="panel">
+          <div class="panel-title">Failure Simulation</div>
+          <div class="button-grid">
+            <button class="danger" data-action="crash">Process Crash</button>
+            <button class="warn" data-action="hang">Process Hang</button>
+            <button class="danger" data-action="corrupt">State Corruption</button>
+            <button class="warn" data-action="memory">Memory Stress</button>
+            <button data-action="random">Random Failure</button>
+          </div>
+          <div class="subtle">All simulations target only the isolated demo process.</div>
+        </article>
+
+        <article class="panel wide">
+          <div class="panel-title">Recovery History</div>
+          <div class="table-wrap small-table">
+            <table>
+              <thead><tr><th>#</th><th>Failure</th><th>Checkpoint</th><th>RTO</th><th>Status</th></tr></thead>
+              <tbody id="history-table"></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="panel wide">
+          <div class="panel-title">Recent Events</div>
+          <div id="events" class="events"></div>
+        </article>
+      </section>
+    </main>
+
+    <div id="toast" class="toast"></div>
+    <script src="/static/script.js"></script>
+  </body>
+</html>
