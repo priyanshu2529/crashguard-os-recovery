@@ -64,5 +64,17 @@ class ProcessInfo(BaseModel):
     state: dict[str, Any] | None = None
 
 
+class ManualRecoveryRequest(BaseModel):
+    checkpoint_id: int | None = None
+
+
+class ConfigUpdateRequest(BaseModel):
+    recovery_policy: str | None = None
+    monitor_interval_seconds: float | None = None
+    heartbeat_timeout_seconds: float | None = None
+    cpu_threshold_percent: float | None = None
+    memory_threshold_mb: float | None = None
+
+
 def utc_now() -> str:
     return datetime.utcnow().isoformat(timespec="seconds") + "Z"

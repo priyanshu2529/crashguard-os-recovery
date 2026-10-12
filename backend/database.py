@@ -65,10 +65,18 @@ class Database:
                 );
                 """
             )
-            conn.execute(
-                "INSERT OR IGNORE INTO configuration(key, value) VALUES('recovery_policy', ?)",
-                (config.DEFAULT_POLICY,),
-            )
+            defaults = [
+                ("recovery_policy", config.DEFAULT_POLICY),
+                ("monitor_interval_seconds", str(config.MONITOR_INTERVAL_SECONDS)),
+                ("heartbeat_timeout_seconds", str(config.HEARTBEAT_TIMEOUT_SECONDS)),
+                ("cpu_threshold_percent", str(config.CPU_THRESHOLD_PERCENT)),
+                ("memory_threshold_mb", str(config.MEMORY_THRESHOLD_MB)),
+            ]
+            for k, v in defaults:
+                conn.execute(
+                    "INSERT OR IGNORE INTO configuration(key, value) VALUES(?, ?)",
+                    (k, v),
+                )
 
     def rows(self, query: str, params: tuple[Any, ...] = ()) -> list[dict[str, Any]]:
         with self.connect() as conn:

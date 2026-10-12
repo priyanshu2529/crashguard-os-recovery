@@ -17,6 +17,8 @@ class FailureDetector:
 
         if info["status"] == "STOPPED" and self.process_manager.supervised:
             return self._event("Process Crash", "CRITICAL", "Rollback to latest valid checkpoint", "Demo process terminated")
+        if not self.process_manager.supervised and info["status"] == "STOPPED":
+            return None
         if not state:
             return self._event("State Corruption", "CRITICAL", "Restore checkpoint", "State file is missing or unreadable")
         if not isinstance(state.get("counter"), int) or not 0 <= int(state.get("progress", -1)) <= 100:

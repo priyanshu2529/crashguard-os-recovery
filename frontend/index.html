@@ -1,116 +1,705 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>CrashGuard Console</title>
-    <link rel="stylesheet" href="/static/style.css" />
-  </head>
-  <body>
-    <header class="topbar">
-      <div>
-        <h1>CRASHGUARD</h1>
-        <p>Intelligent System Failure Recovery & Checkpointing Framework</p>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CrashGuard Console — Intelligent System Failure Recovery</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="app-container">
+    <!-- Left Navigation Sidebar -->
+    <aside class="app-sidebar">
+      <div class="brand-section">
+        <div class="brand-icon">CG</div>
+        <div class="brand-meta">
+          <h1>CRASHGUARD</h1>
+          <span>OS Recovery Console</span>
+        </div>
       </div>
-      <div class="system-state"><span id="health-dot" class="dot"></span><span id="health">BOOTING</span></div>
-    </header>
 
-    <main class="shell">
-      <section class="metrics-strip">
-        <div><span>CPU</span><strong id="cpu">--%</strong></div>
-        <div><span>MEMORY</span><strong id="memory">--%</strong></div>
-        <div><span>DISK</span><strong id="disk">--%</strong></div>
-        <div><span>CHECKPOINTS</span><strong id="checkpoint-count">0</strong></div>
-        <div><span>RECOVERIES</span><strong id="recovery-count">0</strong></div>
-      </section>
+      <nav class="nav-scroller">
+        <div class="nav-group-title">Monitoring</div>
+        <a href="#overview" class="nav-link active" data-page="overview">
+          <span class="nav-icon">⬚</span>
+          <span>Overview</span>
+        </a>
+        <a href="#analytics" class="nav-link" data-page="analytics">
+          <span class="nav-icon">∿</span>
+          <span>System Analytics</span>
+        </a>
+        <a href="#visualizer" class="nav-link" data-page="visualizer">
+          <span class="nav-icon">▥</span>
+          <span>Resource Visualizer</span>
+        </a>
 
-      <section class="grid">
-        <article class="panel">
-          <div class="panel-title">System Health</div>
-          <div class="bar-row"><span>CPU</span><div class="bar"><i id="cpu-bar"></i></div><b id="cpu-small">--%</b></div>
-          <div class="bar-row"><span>RAM</span><div class="bar"><i id="ram-bar"></i></div><b id="ram-small">--%</b></div>
-          <div class="bar-row"><span>DISK</span><div class="bar"><i id="disk-bar"></i></div><b id="disk-small">--%</b></div>
-          <div class="subtle">Live host resource sampling via psutil.</div>
-        </article>
+        <div class="nav-group-title">Reliability</div>
+        <a href="#checkpoints" class="nav-link" data-page="checkpoints">
+          <span class="nav-icon">▣</span>
+          <span>Checkpoint Explorer</span>
+        </a>
+        <a href="#recovery" class="nav-link" data-page="recovery">
+          <span class="nav-icon">↺</span>
+          <span>Recovery Center</span>
+        </a>
+        <a href="#failure-lab" class="nav-link" data-page="failure-lab">
+          <span class="nav-icon">⚡</span>
+          <span>Failure Lab</span>
+        </a>
 
-        <article class="panel">
-          <div class="panel-title">Active Process</div>
-          <dl class="kv">
-            <dt>Name</dt><dd id="process-name">crashguard-demo</dd>
-            <dt>PID</dt><dd id="pid">--</dd>
-            <dt>Status</dt><dd id="process-status">STOPPED</dd>
-            <dt>Uptime</dt><dd id="uptime">0s</dd>
-            <dt>Task</dt><dd id="task">--</dd>
-            <dt>Progress</dt><dd id="progress">--</dd>
-            <dt>Counter</dt><dd id="counter">--</dd>
-          </dl>
-          <div class="button-row">
-            <button data-action="startProcess">Start</button>
-            <button data-action="stopProcess">Stop</button>
+        <div class="nav-group-title">System</div>
+        <a href="#events" class="nav-link" data-page="events">
+          <span class="nav-icon">≡</span>
+          <span>Event Logs</span>
+        </a>
+        <a href="#configuration" class="nav-link" data-page="configuration">
+          <span class="nav-icon">⚙</span>
+          <span>Configuration</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="runtime-badge">
+          <span>SUPERVISOR</span>
+          <span id="sidebar-version">v2.0.0</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace Area -->
+    <main class="app-main">
+      <header class="app-header">
+        <div class="header-left">
+          <div class="page-title-display" id="page-heading">COMMAND CENTER / OVERVIEW</div>
+        </div>
+        <div class="header-right">
+          <div class="pulse-indicator">
+            <span class="indicator-dot" id="system-health-dot"></span>
+            <span id="system-health-text">INITIALIZING</span>
           </div>
-        </article>
-
-        <article class="panel wide">
-          <div class="panel-title">Checkpoint Manager</div>
-          <div class="button-row compact">
-            <button data-action="createCheckpoint">Create Checkpoint</button>
+          <div class="freshness-tag">
+            SYNC: <span id="sync-timestamp">--:--:--</span>
           </div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>ID</th><th>Time</th><th>Type</th><th>Size</th><th>Savings</th><th>Status</th><th>Action</th></tr></thead>
-              <tbody id="checkpoint-table"></tbody>
-            </table>
+          <button class="btn btn-sm" id="btn-manual-sync" title="Force sync from backend">SYNC</button>
+        </div>
+      </header>
+
+      <div class="workspace-container">
+        <!-- ================= PAGE 1: OVERVIEW ================= -->
+        <section id="page-overview" class="page-view active">
+          <div class="metrics-grid-5">
+            <div class="metric-card">
+              <div class="metric-label"><span>Host CPU</span><span>UTIL</span></div>
+              <div class="metric-val" id="ov-cpu">--%</div>
+              <div class="metric-sub">Host processor load</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label"><span>Host Memory</span><span>RAM</span></div>
+              <div class="metric-val" id="ov-mem">--%</div>
+              <div class="metric-sub" id="ov-mem-mb">-- MB allocated</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label"><span>Storage Disk</span><span>FS</span></div>
+              <div class="metric-val" id="ov-disk">--%</div>
+              <div class="metric-sub">Snapshot partition</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label"><span>Total Checkpoints</span><span>DB</span></div>
+              <div class="metric-val" id="ov-checkpoints">0</div>
+              <div class="metric-sub" id="ov-last-cp">None saved</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label"><span>Recoveries</span><span>AUTO</span></div>
+              <div class="metric-val" id="ov-recoveries">0</div>
+              <div class="metric-sub" id="ov-last-rec">Idle</div>
+            </div>
           </div>
-        </article>
 
-        <article class="panel">
-          <div class="panel-title">Recovery Console</div>
-          <label class="select-label">Policy
-            <select id="policy">
-              <option value="latest">Latest Checkpoint</option>
-              <option value="safest">Safest Checkpoint</option>
-              <option value="automatic">Automatic Recovery</option>
-              <option value="manual">Manual Recovery</option>
-            </select>
-          </label>
-          <dl class="kv">
-            <dt>Last Failure</dt><dd id="last-failure">--</dd>
-            <dt>Checkpoint</dt><dd id="checkpoint-used">--</dd>
-            <dt>RTO</dt><dd id="rto">--</dd>
-            <dt>Status</dt><dd id="recovery-status">IDLE</dd>
-          </dl>
-        </article>
+          <div class="columns-2">
+            <!-- Active Subprocess Supervisor Card -->
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Supervised Process: crashguard-demo</h3>
+                <span class="tag" id="ov-proc-status-tag">STOPPED</span>
+              </div>
+              <div class="kv-table">
+                <div class="kv-key">PID</div><div class="kv-val" id="ov-proc-pid">--</div>
+                <div class="kv-key">Uptime</div><div class="kv-val" id="ov-proc-uptime">0s</div>
+                <div class="kv-key">Assigned Task</div><div class="kv-val" id="ov-proc-task">--</div>
+                <div class="kv-key">Progress</div>
+                <div class="kv-val">
+                  <div class="progress-bar-wrap">
+                    <div class="progress-track"><div class="progress-fill" id="ov-proc-prog-fill"></div></div>
+                    <span id="ov-proc-prog-val">0%</span>
+                  </div>
+                </div>
+                <div class="kv-key">Work Counter</div><div class="kv-val" id="ov-proc-counter">--</div>
+                <div class="kv-key">Working Set Item</div><div class="kv-val" id="ov-proc-item">--</div>
+                <div class="kv-key">Last Heartbeat</div><div class="kv-val" id="ov-proc-heartbeat">--</div>
+              </div>
+              <div style="margin-top: 16px; display: flex; gap: 8px;">
+                <button class="btn btn-primary" id="ov-btn-start">Start Process</button>
+                <button class="btn btn-danger" id="ov-btn-stop">Stop Process</button>
+                <button class="btn" id="ov-btn-create-cp">Create Checkpoint</button>
+              </div>
+            </div>
 
-        <article class="panel">
-          <div class="panel-title">Failure Simulation</div>
-          <div class="button-grid">
-            <button class="danger" data-action="crash">Process Crash</button>
-            <button class="warn" data-action="hang">Process Hang</button>
-            <button class="danger" data-action="corrupt">State Corruption</button>
-            <button class="warn" data-action="memory">Memory Stress</button>
-            <button data-action="random">Random Failure</button>
+            <!-- Reliability & Quick Controls -->
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Reliability & Fault-Tolerance Policy</h3>
+                <span class="header-action" id="ov-policy-tag">POLICY: LATEST</span>
+              </div>
+              <div class="kv-table">
+                <div class="kv-key">Active Policy</div><div class="kv-val" id="ov-policy-name">latest</div>
+                <div class="kv-key">Monitor Loop</div><div class="kv-val" id="ov-monitor-status">ACTIVE (every 2.0s)</div>
+                <div class="kv-key">Last Failure</div><div class="kv-val" id="ov-last-failure">None recorded</div>
+                <div class="kv-key">Last Checkpoint Used</div><div class="kv-val" id="ov-last-cp-used">None</div>
+                <div class="kv-key">Measured RTO</div><div class="kv-val" id="ov-last-rto">--</div>
+              </div>
+              <div style="margin-top: 16px;">
+                <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">Quick Operations</div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <button class="btn btn-sm" onclick="App.navigate('checkpoints')">Open Explorer</button>
+                  <button class="btn btn-sm" onclick="App.navigate('analytics')">View Analytics</button>
+                  <button class="btn btn-sm" onclick="App.navigate('failure-lab')">Trigger Test Failure</button>
+                  <button class="btn btn-sm" onclick="App.navigate('recovery')">Recovery Center</button>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="subtle">All simulations target only the isolated demo process.</div>
-        </article>
 
-        <article class="panel wide">
-          <div class="panel-title">Recovery History</div>
-          <div class="table-wrap small-table">
-            <table>
-              <thead><tr><th>#</th><th>Failure</th><th>Checkpoint</th><th>RTO</th><th>Status</th></tr></thead>
-              <tbody id="history-table"></tbody>
-            </table>
+          <!-- Recent Operational Events -->
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Recent System Events</h3>
+              <a href="#events" class="header-action" style="text-decoration:none; color:var(--accent);">View full log →</a>
+            </div>
+            <div class="event-feed" id="ov-events-feed" style="max-height: 220px;">
+              <!-- Stream of events -->
+            </div>
           </div>
-        </article>
+        </section>
 
-        <article class="panel wide">
-          <div class="panel-title">Recent Events</div>
-          <div id="events" class="events"></div>
-        </article>
-      </section>
+        <!-- ================= PAGE 2: SYSTEM ANALYTICS ================= -->
+        <section id="page-analytics" class="page-view">
+          <div class="metrics-grid-4">
+            <div class="metric-card">
+              <div class="metric-label"><span>Recovery Success Rate</span><span>RATIO</span></div>
+              <div class="metric-val" id="an-success-rate">--%</div>
+              <div class="metric-sub" id="an-success-sub">0 of 0 successful</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label"><span>Mean RTO</span><span>DURATION</span></div>
+              <div class="metric-val" id="an-avg-rto">--s</div>
+              <div class="metric-sub" id="an-rto-bounds">Min: --s | Max: --s</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label"><span>Avg Storage Savings</span><span>DELTA</span></div>
+              <div class="metric-val" id="an-avg-savings">--%</div>
+              <div class="metric-sub">Incremental vs Full state</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label"><span>Incremental Ratio</span><span>EFFICIENCY</span></div>
+              <div class="metric-val" id="an-cp-ratio">--%</div>
+              <div class="metric-sub" id="an-cp-counts">0 full, 0 inc</div>
+            </div>
+          </div>
+
+          <div class="columns-2">
+            <!-- RTO Performance Chart -->
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Historical Recovery Time Objective (RTO)</h3>
+                <span class="header-action">Seconds per recovery</span>
+              </div>
+              <div class="chart-box">
+                <canvas id="chart-rto" class="os-canvas"></canvas>
+              </div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">
+                Measures the duration from failure detection to complete state restoration and process resumption.
+              </div>
+            </div>
+
+            <!-- Checkpoint Storage Size & Savings Chart -->
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Checkpoint Footprint & Storage Savings</h3>
+                <span class="header-action">State bytes & diff efficiency</span>
+              </div>
+              <div class="chart-box">
+                <canvas id="chart-checkpoints" class="os-canvas"></canvas>
+              </div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">
+                Incremental checkpoints store only modified keys, reducing snapshot disk footprint.
+              </div>
+            </div>
+          </div>
+
+          <div class="columns-2" style="margin-top: 16px;">
+            <!-- Failure Breakdown Table -->
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Failure Distribution by Type</h3>
+                <span class="header-action">SQLite Aggregation</span>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead><tr><th>Failure Type</th><th>Incidents</th><th>Severity</th></tr></thead>
+                  <tbody id="an-failure-table">
+                    <tr><td colspan="3" style="text-align:center; color:var(--text-dim);">No failures recorded yet</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Recovery History Summary -->
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Recent Recovery Audits</h3>
+                <span class="header-action">Last 10 Events</span>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead><tr><th>#</th><th>Failure</th><th>Checkpoint</th><th>RTO</th><th>Status</th></tr></thead>
+                  <tbody id="an-recent-rec-table">
+                    <tr><td colspan="5" style="text-align:center; color:var(--text-dim);">No recoveries yet</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= PAGE 3: RESOURCE VISUALIZER ================= -->
+        <section id="page-visualizer" class="page-view">
+          <div class="panel" style="margin-bottom: 16px;">
+            <div class="panel-header">
+              <h3>Live Host Resource Utilization (psutil)</h3>
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <span style="font-family: var(--font-mono); font-size: 11px; color: var(--accent);">● CPU</span>
+                <span style="font-family: var(--font-mono); font-size: 11px; color: #22c55e;">● RAM</span>
+                <span style="font-family: var(--font-mono); font-size: 11px; color: #eab308;">Threshold Warning (90%)</span>
+              </div>
+            </div>
+            <div class="chart-box">
+              <canvas id="chart-live-system" class="os-canvas" style="height: 190px;"></canvas>
+            </div>
+          </div>
+
+          <div class="columns-2">
+            <!-- Process Memory & Performance -->
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Process Memory (RSS) Trend</h3>
+                <span class="header-action">MB in RAM</span>
+              </div>
+              <div class="chart-box">
+                <canvas id="chart-live-process" class="os-canvas"></canvas>
+              </div>
+              <div class="kv-table" style="margin-top: 14px;">
+                <div class="kv-key">Process RSS</div><div class="kv-val" id="vis-proc-rss">0.0 MB</div>
+                <div class="kv-key">Memory Limit</div><div class="kv-val" id="vis-proc-limit">350.0 MB threshold</div>
+                <div class="kv-key">Process State</div><div class="kv-val" id="vis-proc-status">STOPPED</div>
+              </div>
+            </div>
+
+            <!-- Demo Process Internal State Monitor -->
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Demo Subprocess Internal Diagnostics</h3>
+                <span class="header-action">Atomic state mirror</span>
+              </div>
+              <div class="kv-table">
+                <div class="kv-key">Supervised PID</div><div class="kv-val" id="vis-pid">--</div>
+                <div class="kv-key">Task State</div><div class="kv-val" id="vis-task">--</div>
+                <div class="kv-key">Counter</div><div class="kv-val" id="vis-counter">--</div>
+                <div class="kv-key">Current Item</div><div class="kv-val" id="vis-item">--</div>
+                <div class="kv-key">Working Set</div><div class="kv-val" id="vis-workset">[]</div>
+                <div class="kv-key">Heartbeat Delay</div><div class="kv-val" id="vis-heartbeat-delay">--</div>
+              </div>
+              <div style="margin-top: 16px; border-top: 1px solid var(--border-subtle); padding-top: 12px; display: flex; gap: 8px;">
+                <button class="btn btn-sm btn-primary" id="vis-btn-start">Start Process</button>
+                <button class="btn btn-sm btn-danger" id="vis-btn-stop">Stop Process</button>
+                <button class="btn btn-sm" id="vis-btn-checkpoint">Take Snapshot Now</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= PAGE 4: CHECKPOINT EXPLORER ================= -->
+        <section id="page-checkpoints" class="page-view">
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Checkpoint Storage Catalog</h3>
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <input type="text" id="cp-search-input" class="form-control" placeholder="Search ID, Process, Hash..." style="width: 220px;" />
+                <button class="btn btn-primary" id="btn-create-checkpoint-page">Create Checkpoint</button>
+              </div>
+            </div>
+            
+            <div class="table-responsive" style="max-height: 480px;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Checkpoint</th>
+                    <th>Created At</th>
+                    <th>Type</th>
+                    <th>Size (Bytes)</th>
+                    <th>Storage Diff</th>
+                    <th>Base Ref</th>
+                    <th>Validation</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="checkpoints-table-body">
+                  <!-- Rows populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Checkpoint Detail & Chain Inspector -->
+          <div class="columns-2">
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Snapshot Metadata & Checksum Inspector</h3>
+                <span class="header-action" id="cp-detail-label">Select a checkpoint</span>
+              </div>
+              <div id="cp-inspector-empty" style="color:var(--text-dim); text-align:center; padding: 24px;">
+                Select a checkpoint row above to inspect cryptographic checksum, snapshot lineage, and reconstructed state.
+              </div>
+              <div id="cp-inspector-body" style="display: none;">
+                <div class="kv-table">
+                  <div class="kv-key">ID / Label</div><div class="kv-val" id="cp-insp-id">--</div>
+                  <div class="kv-key">Timestamp</div><div class="kv-val" id="cp-insp-time">--</div>
+                  <div class="kv-key">Type</div><div class="kv-val" id="cp-insp-type">--</div>
+                  <div class="kv-key">Base Checkpoint</div><div class="kv-val" id="cp-insp-base">--</div>
+                  <div class="kv-key">SHA-256 Checksum</div><div class="kv-val" id="cp-insp-checksum" style="font-size: 10.5px;">--</div>
+                  <div class="kv-key">Validation Status</div><div class="kv-val" id="cp-insp-val-status">--</div>
+                  <div class="kv-key">Storage Path</div><div class="kv-val" id="cp-insp-path" style="font-size: 10.5px;">--</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Reconstructed Application State Payload</h3>
+                <span class="header-action">Full State JSON</span>
+              </div>
+              <pre id="cp-state-json" style="background: #090c10; border: 1px solid var(--border); padding: 12px; font-family: var(--font-mono); font-size: 11px; color: #a5d6ff; max-height: 220px; overflow: auto; margin: 0;">No checkpoint selected</pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= PAGE 5: RECOVERY CENTER ================= -->
+        <section id="page-recovery" class="page-view">
+          <div class="columns-2">
+            <!-- Recovery Supervisor & Policy -->
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Recovery Supervisor State</h3>
+                <span class="tag" id="rec-status-tag">IDLE</span>
+              </div>
+              <div class="kv-table">
+                <div class="kv-key">Active Policy</div><div class="kv-val" id="rec-policy-val">latest</div>
+                <div class="kv-key">Last Detected Failure</div><div class="kv-val" id="rec-last-failure">--</div>
+                <div class="kv-key">Checkpoint Restored</div><div class="kv-val" id="rec-last-cp">--</div>
+                <div class="kv-key">Measured RTO</div><div class="kv-val" id="rec-last-rto">--</div>
+              </div>
+
+              <div style="margin-top: 18px; border-top: 1px solid var(--border-subtle); padding-top: 14px;">
+                <label class="form-label">Change Recovery Policy</label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                  <select id="rec-policy-select" class="form-control" style="flex: 1;">
+                    <option value="latest">Latest Checkpoint (Newest Valid State)</option>
+                    <option value="safest">Safest Checkpoint (Deep Validated History)</option>
+                    <option value="automatic">Automatic Recovery (Failover to Safest)</option>
+                    <option value="manual">Manual Recovery (Operator Intervention)</option>
+                  </select>
+                  <button class="btn btn-primary" id="btn-save-policy">Apply</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Manual Operator Trigger -->
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Operator-Initiated Rollback Trigger</h3>
+                <span class="header-action">Manual Override</span>
+              </div>
+              <p style="color: var(--text-muted); font-size: 12px; margin-top: 0;">
+                Perform an immediate manual recovery sequence. If a checkpoint ID is provided, the engine restores to that explicit snapshot; otherwise it uses the configured policy.
+              </p>
+              <div class="form-group">
+                <label class="form-label">Target Checkpoint (Optional ID)</label>
+                <input type="number" id="rec-manual-cp-id" class="form-control" placeholder="Leave empty for policy default" style="width: 100%;" />
+              </div>
+              <button class="btn btn-warn" id="btn-trigger-manual-recovery">Trigger Immediate Recovery Sequence</button>
+            </div>
+          </div>
+
+          <!-- Recovery Sequence Explanation & History -->
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Standard Operating Systems Recovery Sequence</h3>
+              <span class="header-action">Supervisor Workflow</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; font-family: var(--font-mono); font-size: 11px;">
+              <div style="background: #0d1117; border: 1px solid var(--border); padding: 10px;">
+                <div style="color: var(--accent); font-weight: 700;">STEP 1</div>
+                <div style="margin-top: 4px; color: var(--text-main);">Failure Detection</div>
+                <div style="color: var(--text-dim); margin-top: 2px;">Heartbeat / PID / Schema validation check</div>
+              </div>
+              <div style="background: #0d1117; border: 1px solid var(--border); padding: 10px;">
+                <div style="color: var(--accent); font-weight: 700;">STEP 2</div>
+                <div style="margin-top: 4px; color: var(--text-main);">Process Halt</div>
+                <div style="color: var(--text-dim); margin-top: 2px;">Terminate corrupt or hung subprocess</div>
+              </div>
+              <div style="background: #0d1117; border: 1px solid var(--border); padding: 10px;">
+                <div style="color: var(--accent); font-weight: 700;">STEP 3</div>
+                <div style="margin-top: 4px; color: var(--text-main);">Checkpoint Validation</div>
+                <div style="color: var(--text-dim); margin-top: 2px;">Recalculate SHA-256 and diff integrity</div>
+              </div>
+              <div style="background: #0d1117; border: 1px solid var(--border); padding: 10px;">
+                <div style="color: var(--accent); font-weight: 700;">STEP 4</div>
+                <div style="margin-top: 4px; color: var(--text-main);">State Restoration</div>
+                <div style="color: var(--text-dim); margin-top: 2px;">Reconstruct state and restart process</div>
+              </div>
+              <div style="background: #0d1117; border: 1px solid var(--border); padding: 10px;">
+                <div style="color: var(--accent); font-weight: 700;">STEP 5</div>
+                <div style="margin-top: 4px; color: var(--text-main);">RTO Audit</div>
+                <div style="color: var(--text-dim); margin-top: 2px;">Record recovery duration in SQLite</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Complete Recovery History Audit -->
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Recovery Incident Audit History</h3>
+              <span class="header-action">Historical SQLite Records</span>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Failure Type</th>
+                    <th>Detected At</th>
+                    <th>Recovery Duration (RTO)</th>
+                    <th>Checkpoint Used</th>
+                    <th>Result Status</th>
+                  </tr>
+                </thead>
+                <tbody id="rec-history-table">
+                  <!-- Records -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= PAGE 6: FAILURE LAB ================= -->
+        <section id="page-failure-lab" class="page-view">
+          <div class="panel" style="border-left: 3px solid var(--state-warning);">
+            <div class="panel-header">
+              <h3 style="color: #facc15;">Isolated Fault-Tolerance Simulation Environment</h3>
+              <span class="tag tag-warning">SANDBOXED DEMO PROCESS ONLY</span>
+            </div>
+            <p style="color: var(--text-muted); margin: 0; font-size: 12.5px;">
+              All failure actions listed below communicate exclusively with the isolated demo subprocess via atomic command files. 
+              <strong>No arbitrary host processes, system files, or host operating system stability are impacted.</strong>
+            </p>
+          </div>
+
+          <div class="columns-2">
+            <!-- Scenario 1: Process Crash -->
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Scenario 01: Process Crash</h3>
+                <span class="tag tag-critical">CRITICAL</span>
+              </div>
+              <p style="color: var(--text-muted); font-size: 12px;">
+                Sends an immediate abort signal (<code style="color: var(--accent);">os._exit(7)</code>) to the demo subprocess. The process ceases execution abruptly.
+              </p>
+              <div style="font-size: 11.5px; color: #8b949e; margin-bottom: 12px;">
+                Expected Behavior: Failure detector notices PID disappearance, triggers rollback to latest valid checkpoint, and respawns the worker.
+              </div>
+              <button class="btn btn-danger" id="lab-btn-crash">Simulate Process Crash</button>
+            </div>
+
+            <!-- Scenario 2: Process Hang -->
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Scenario 02: Process Hang (Unresponsive)</h3>
+                <span class="tag tag-warning">HIGH</span>
+              </div>
+              <p style="color: var(--text-muted); font-size: 12px;">
+                Signals the demo process to stop updating its internal heartbeat timestamp while maintaining its active PID.
+              </p>
+              <div style="font-size: 11.5px; color: #8b949e; margin-bottom: 12px;">
+                Expected Behavior: Supervisor monitors elapsed heartbeat time. When it exceeds threshold (6.0s), hang is classified and supervisor executes recovery.
+              </div>
+              <button class="btn btn-warn" id="lab-btn-hang">Simulate Process Hang</button>
+            </div>
+
+            <!-- Scenario 3: State Corruption -->
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Scenario 03: State Corruption</h3>
+                <span class="tag tag-critical">CRITICAL</span>
+              </div>
+              <p style="color: var(--text-muted); font-size: 12px;">
+                Injects invalid schemas and bad hash data into the atomic state file (<code style="color: var(--accent);">counter: "CORRUPTED"</code>).
+              </p>
+              <div style="font-size: 11.5px; color: #8b949e; margin-bottom: 12px;">
+                Expected Behavior: Failure detector performs Pydantic schema validation, detects corrupt types, rejects state, and initiates checkpoint restore.
+              </div>
+              <button class="btn btn-danger" id="lab-btn-corrupt">Simulate State Corruption</button>
+            </div>
+
+            <!-- Scenario 4: Memory Stress -->
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Scenario 04: Controlled Memory Pressure</h3>
+                <span class="tag tag-warning">MEDIUM</span>
+              </div>
+              <p style="color: var(--text-muted); font-size: 12px;">
+                Allocates buffer bytearrays in the worker's memory up to safe demo limits (configurable 40 - 120 MB).
+              </p>
+              <div style="font-size: 11.5px; color: #8b949e; margin-bottom: 12px;">
+                Expected Behavior: Demonstrates RSS memory growth monitoring and resource threshold tracking via psutil.
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-warn" id="lab-btn-memory">Allocate 60 MB Pressure</button>
+                <button class="btn" id="lab-btn-random">Random Chaos Injection</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= PAGE 7: EVENT LOGS ================= -->
+        <section id="page-events" class="page-view">
+          <div class="panel">
+            <div class="panel-header">
+              <h3>System Observability & Incident Audit Logs</h3>
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <select id="log-filter-level" class="form-control" style="width: 110px;">
+                  <option value="ALL">All Levels</option>
+                  <option value="INFO">INFO</option>
+                  <option value="WARNING">WARNING</option>
+                  <option value="ERROR">ERROR</option>
+                </select>
+                <input type="text" id="log-search-input" class="form-control" placeholder="Search event type, message..." style="width: 240px;" />
+                <button class="btn" id="btn-refresh-logs">Query</button>
+                <button class="btn btn-primary" id="btn-export-csv">Export CSV</button>
+              </div>
+            </div>
+
+            <div class="event-feed" id="full-events-feed" style="max-height: 520px;">
+              <!-- Dynamic Event Stream -->
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= PAGE 8: SYSTEM CONFIGURATION ================= -->
+        <section id="page-configuration" class="page-view">
+          <div class="columns-2">
+            <!-- Persistent Recovery & Monitoring Thresholds -->
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Configurable Runtime Thresholds</h3>
+                <span class="header-action">Persisted in SQLite</span>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">Recovery Policy</label>
+                <select id="cfg-policy" class="form-control" style="width: 100%;">
+                  <option value="latest">latest — Roll back to newest valid snapshot</option>
+                  <option value="safest">safest — Roll back to safest validated snapshot in chain</option>
+                  <option value="automatic">automatic — Automated failover policy</option>
+                  <option value="manual">manual — Operator manual intervention only</option>
+                </select>
+                <div class="form-desc">Default behavior when supervisor detects process crash or corruption.</div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Monitor Interval (Seconds)</label>
+                <input type="number" id="cfg-monitor-interval" class="form-control" step="0.5" min="0.5" max="60" style="width: 100%;" />
+                <div class="form-desc">Sampling frequency for process state, psutil metrics, and failure checks.</div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Heartbeat Timeout (Seconds)</label>
+                <input type="number" id="cfg-heartbeat-timeout" class="form-control" step="0.5" min="1" max="120" style="width: 100%;" />
+                <div class="form-desc">Maximum permissible silence from subprocess before flagging a Process Hang.</div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Host CPU Critical Threshold (%)</label>
+                <input type="number" id="cfg-cpu-threshold" class="form-control" step="1" min="10" max="100" style="width: 100%;" />
+                <div class="form-desc">CPU percentage that triggers CRITICAL system status.</div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Process Memory Warning Threshold (MB)</label>
+                <input type="number" id="cfg-mem-threshold" class="form-control" step="10" min="50" max="2048" style="width: 100%;" />
+                <div class="form-desc">Maximum RSS footprint before alerting on memory pressure.</div>
+              </div>
+
+              <button class="btn btn-primary" id="btn-save-configuration">Save & Apply Configuration</button>
+            </div>
+
+            <!-- Runtime Environment & Path Architecture -->
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Environment & Architecture Specifications</h3>
+                <span class="header-action">Runtime Diagnostics</span>
+              </div>
+              <div class="kv-table">
+                <div class="kv-key">Application</div><div class="kv-val">CrashGuard Framework</div>
+                <div class="kv-key">Release</div><div class="kv-val" id="cfg-version">2.0.0-PROD</div>
+                <div class="kv-key">Host Platform</div><div class="kv-val" id="cfg-platform">Windows NT / x86_64</div>
+                <div class="kv-key">Storage DB</div><div class="kv-val" id="cfg-path-db" style="font-size: 10.5px;">--</div>
+                <div class="kv-key">Snapshot Dir</div><div class="kv-val" id="cfg-path-snapshots" style="font-size: 10.5px;">--</div>
+                <div class="kv-key">Log Dir</div><div class="kv-val" id="cfg-path-logs" style="font-size: 10.5px;">--</div>
+                <div class="kv-key">Cryptography</div><div class="kv-val">SHA-256 Checksum Validation</div>
+                <div class="kv-key">State Diff</div><div class="kv-val">Key-level delta for incremental checkpoints</div>
+              </div>
+
+              <div style="margin-top: 24px; border-top: 1px solid var(--border-subtle); padding-top: 14px;">
+                <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Supervisor Controls</div>
+                <div style="display:flex; gap: 8px;">
+                  <button class="btn btn-sm" onclick="App.api('/api/process/start', {method:'POST'}).then(() => App.toast('Process started'))">Start Worker</button>
+                  <button class="btn btn-sm btn-danger" onclick="App.api('/api/process/stop', {method:'POST'}).then(() => App.toast('Process stopped'))">Stop Worker</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
     </main>
+  </div>
 
-    <div id="toast" class="toast"></div>
-    <script src="/static/script.js"></script>
-  </body>
+  <!-- Reusable Confirmation Dialog -->
+  <div class="modal-overlay" id="confirm-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h4 id="modal-title">Confirm Action</h4>
+      </div>
+      <p id="modal-message" style="color: var(--text-main); font-size: 12.5px; margin: 0;"></p>
+      <div class="modal-actions">
+        <button class="btn" id="modal-btn-cancel">Cancel</button>
+        <button class="btn btn-danger" id="modal-btn-confirm">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Bar -->
+  <div id="toast-bar" class="toast-bar"></div>
+
+  <script src="/static/script.js"></script>
+</body>
 </html>

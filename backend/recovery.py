@@ -83,6 +83,16 @@ class RecoveryEngine:
     def status(self) -> dict[str, Any]:
         return self.last_status | {"policy": self.get_policy()}
 
+    def trigger_manual(self, checkpoint_id: int | None = None) -> dict[str, Any]:
+        failure = FailureEvent(
+            failure_type="Manual Operator Trigger",
+            severity="OPERATIONAL",
+            detected_at=utc_now(),
+            recovery_action="Manual rollback requested via recovery console",
+            details=f"Operator requested recovery to checkpoint ID: {checkpoint_id or 'policy default'}",
+        )
+        return self.recover(failure, checkpoint_id=checkpoint_id)
+
     def _select_checkpoint(self, checkpoint_id: int | None) -> dict[str, Any] | None:
         policy = self.get_policy()
         if checkpoint_id is not None or policy == "manual":
