@@ -111,17 +111,18 @@ python -m pip install -r requirements.txt
 
 ### Step 3: Launch CrashGuard Backend & Console
 ```powershell
-python -m uvicorn backend.main:app --reload --port 8000
+python run.py
 ```
+*(Alternatively: `python -m uvicorn backend.main:app --reload --port 8080`)*
 
 ### Step 4: Access Console in Browser
 Open your browser and navigate to:
 ```text
-http://127.0.0.1:8000
+http://127.0.0.1:8080
 ```
 API Documentation is available at:
 ```text
-http://127.0.0.1:8000/docs
+http://127.0.0.1:8080/docs
 ```
 
 ---
@@ -153,7 +154,7 @@ python -m pytest -v
 
 ## 6. Demonstration & Viva Walkthrough
 
-1. **Start Subprocess**: Open the console at `http://127.0.0.1:8000`. Navigate to **Overview** and click **Start Process**. Observe the PID, counter, and task advance in real time.
+1. **Start Subprocess**: Open the console at `http://127.0.0.1:8080`. Navigate to **Overview** and click **Start Process**. Observe the PID, counter, and task advance in real time.
 2. **Create Baseline Snapshot**: Click **Create Checkpoint**. Notice Checkpoint `CP-001` created as `FULL`.
 3. **Advance & Incremental Snapshot**: Wait 3–5 seconds so the state advances. Click **Create Checkpoint** again. Notice `CP-002` created as `INCREMENTAL` with storage savings displayed.
 4. **Inspect in Checkpoint Explorer**: Click **Checkpoint Explorer** in the sidebar. Click `CP-002` to inspect its SHA-256 checksum, parent base checkpoint reference, and reconstructed JSON state payload.

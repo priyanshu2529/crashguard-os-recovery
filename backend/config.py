@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 
@@ -21,6 +22,7 @@ MAX_MEMORY_STRESS_MB = 120
 
 DEFAULT_POLICY = "latest"
 VALID_POLICIES = {"latest", "safest", "manual", "automatic"}
+PORT = int(os.environ.get("PORT", 8080))
 
 
 def ensure_directories() -> None:
